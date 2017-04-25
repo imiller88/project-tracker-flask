@@ -3,11 +3,11 @@
 A front-end for a database that allows users to work with students, class
 projects, and the grades students receive in class projects.
 """
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
-app = Flask(__name__)
 
 
 def connect_to_db(app):
@@ -20,21 +20,16 @@ def connect_to_db(app):
 
 
 def get_student_by_github(github):
-    """Given a GitHub account name, print info about the matching student."""
+    """Given a github account name, print information about the matching student."""
 
     QUERY = """
         SELECT first_name, last_name, github
-        FROM Students
+        FROM students
         WHERE github = :github
-        """
-
-    db_cursor = db.session.execute(QUERY, {'github': github})
-
+        """ #execute only pulls parameters preceded by :
+    db_cursor = db.session.execute(QUERY, {'github': github}) #'github' = :github
     row = db_cursor.fetchone()
-
-    print "Student: {first} {last}".format(first=row[0], last=row[1])
-    print "GitHub account: {acct}".format(acct=row[2])
-
+    print "Student: %s %s\nGithub account: %s" % (row[0], row[1], row[2])
     return row
 
 
@@ -44,130 +39,115 @@ def make_new_student(first_name, last_name, github):
     Given a first name, last name, and GitHub account, add student to the
     database and print a confirmation message.
     """
-
     QUERY = """
-        INSERT INTO Students
-          VALUES (:first_name, :last_name, :github)
-        """
+        INSERT INTO students
+        VALUES (:first_name, :last_name, :github)"""
 
     db.session.execute(QUERY, {'first_name': first_name,
-                               'last_name': last_name,
-                               'github': github})
+                                'last_name': last_name,
+                                'github': github})
+
     db.session.commit()
 
-    print "Successfully added student: {first} {last}".format(
-        first=first_name, last=last_name)
+    print "Successfully added student: %s %s with github %s" % (first_name, 
+                                                                last_name, github)
 
 
 def get_project_by_title(title):
     """Given a project title, print information about the project."""
 
     QUERY = """
-        SELECT title, description, max_grade
-        FROM Projects
-        WHERE title = :title
-        """
+        SELECT *
+        FROM projects
+        WHERE title = :title """
 
     db_cursor = db.session.execute(QUERY, {'title': title})
-
     row = db_cursor.fetchone()
 
-    print "Title: {title}".format(title=row[0])
-    print "Description: {description}".format(description=row[1])
-    print "Max Grade: {max_grade}".format(max_grade=row[2])
-
+    print "Project %s: %s\nMax grade: %s" % (row[1], row[2], row[3])
     return row
 
 
 def get_grade_by_github_title(github, title):
     """Print grade student received for a project."""
+    QUERY = """ 
+        SELECT *
+        FROM grades
+        WHERE project_title = :title AND student_github = :github """
 
-    QUERY = """
-        SELECT grade
-        FROM Grades
-        WHERE student_github = :github
-          AND project_title = :title
-        """
-
-    db_cursor = db.session.execute(QUERY, {'github': github, 'title': title})
-
+    db_cursor = db.session.execute(QUERY, {'title': title,
+                                            'github': github})
     row = db_cursor.fetchone()
 
-    print "Student {acct} in project {title} received grade of {grade}".format(
-        acct=github, title=title, grade=row[0])
-
+    print "Student %s received a grade of %s on project %s." % (row[1], 
+                                                                row[3], row[2])
     return row
 
 
 def assign_grade(github, title, grade):
     """Assign a student a grade on an assignment and print a confirmation."""
-
+    
     QUERY = """
-        INSERT INTO Grades (student_github, project_title, grade)
-          VALUES (:github, :title, :grade)
-        """
+        UPDATE grades
+        SET grade = :grade
+        WHERE student_github = :github AND project_title = :title """
 
-    db_cursor = db.session.execute(QUERY, {'github': github,
-                                           'title': title,
-                                           'grade': grade})
+    db.session.execute(QUERY, {'github': github,
+                                'title': title,
+                                'grade': grade})
 
     db.session.commit()
 
-    print "Successfully assigned grade of {grade} for {acct} in {title}".format(
-        grade=grade, acct=github, title=title)
+    print "Successfully updated %s's grade on project %s to %s" % (github, title, grade)
 
 
-def get_grades_by_github(github):
-    """Get a list of all grades for a student by their github username"""
+def add_project(title, description, max_grade):
+    """ Adds a project to the projects table. """
 
     QUERY = """
-        SELECT project_title, grade
-        FROM Grades
-        WHERE student_github = :github
-        """
+        INSERT INTO projects (title, description, max_grade)
+        VALUES (:title, :description, :max_grade) """
+
+    db.session.execute(QUERY, {'title': title,
+                                'description': description,
+                                'max_grade': max_grade})
+    db.session.commit()
+
+    print "Successfully added project %s: %s, with max grade %s." % (title, description, max_grade)
+
+
+def get_all_grades(github):
+    """ Get all project grades for a given student. """
+
+    QUERY = """
+        SELECT *
+        FROM grades
+        WHERE student_github = :github """
 
     db_cursor = db.session.execute(QUERY, {'github': github})
 
     rows = db_cursor.fetchall()
 
-    for row in rows:
-        print "Student {acct} received grade of {grade} for {title}".format(
-            acct=github, grade=row[1], title=row[0])
-
-    return rows
-
-
-def get_grades_by_title(title):
-    """Get a list of all student grades for a project by its title"""
-
-    QUERY = """
-        SELECT student_github, grade
-        FROM Grades
-        WHERE project_title = :title
-        """
-
-    db_cursor = db.session.execute(QUERY, {'title': title})
-
-    rows = db_cursor.fetchall()
-
-    for row in rows:
-        print "Student {acct} received grade of {grade} for {title}".format(
-            acct=row[0], grade=row[1], title=title)
-
-    return rows
+    if not rows:
+        print "Sorry, that student github does not exist in the DB."
+    else:
+        for row in rows:
+            print "Student %s completed project %s and received a grade of %s." % (row[1], row[2], row[3])
+        
+        return rows
 
 
 def handle_input():
     """Main loop.
 
     Repeatedly prompt for commands, performing them, until 'quit' is received as a
-    command."""
+    command. Command and arguments must all be separated by a double space."""
 
     command = None
 
     while command != "quit":
         input_string = raw_input("HBA Database> ")
-        tokens = input_string.split()
+        tokens = input_string.split("  ")
         command = tokens[0]
         args = tokens[1:]
 
@@ -176,14 +156,14 @@ def handle_input():
             get_student_by_github(github)
 
         elif command == "new_student":
-            first_name, last_name, github = args  # unpack!
+            first_name, last_name, github = args   # unpack!
             make_new_student(first_name, last_name, github)
 
-        elif command == "project":
+        elif command == "project_info":
             title = args[0]
             get_project_by_title(title)
 
-        elif command == "grade":
+        elif command == "get_grade":
             github, title = args
             get_grade_by_github_title(github, title)
 
@@ -191,21 +171,22 @@ def handle_input():
             github, title, grade = args
             assign_grade(github, title, grade)
 
-        elif command == "student_grades":
+        elif command == "add_project":
+            title, description, max_grade = args
+            add_project(title, description, max_grade)
+
+        elif command == "get_all_grades":
             github = args[0]
-            get_grades_by_github(github)
+            get_all_grades(github)
 
-        elif command == "project_grades":
-            title = args[0]
-            get_grades_by_title(title)
-
+        else:
+            if command != "quit":
+                print "Invalid Entry. Try again."
 
 if __name__ == "__main__":
+    app = Flask(__name__)
     connect_to_db(app)
 
     handle_input()
-
-    # To be tidy, we'll close our database connection -- though, since this
-    # is where our program ends, we'd quit anyway.
 
     db.session.close()

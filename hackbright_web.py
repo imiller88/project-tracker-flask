@@ -2,7 +2,7 @@
 
 from flask import Flask, request, render_template
 
-import hackbright
+import hackbright as hb
 
 app = Flask(__name__)
 
@@ -11,13 +11,26 @@ app = Flask(__name__)
 def get_student():
     """Show information about a student."""
 
-    github = "jhacks"
+    github = request.args.get('github')
 
-    first, last, github = hackbright.get_student_by_github(github)
+    first, last, github = hb.get_student_by_github(github)
 
-    return "{acct} is the GitHub account for {first} {last}".format(
-        acct=github, first=first, last=last)
+    html = render_template("student_info.html",
+                            first=first,
+                            last=last,
+                            github=github)
+
+    return html
+
+
+@app.route("/student-search")
+def get_student_form():
+    """Show form for searching for a student."""
+
+    html = render_template("student_search.html")
+    return html
+
 
 if __name__ == "__main__":
-    hackbright.connect_to_db(app)
+    hb.connect_to_db(app)
     app.run(debug=True)
