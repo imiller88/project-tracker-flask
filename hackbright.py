@@ -49,7 +49,8 @@ def make_new_student(first_name, last_name, github):
 
     db.session.commit()
 
-    print "Successfully added student: %s %s with github %s" % (first_name, 
+    # return first_name, last_name, github
+    print "Successfully added student: %s %s with github %s" % (first_name,
                                                                 last_name, github)
 
 
@@ -64,7 +65,7 @@ def get_project_by_title(title):
     db_cursor = db.session.execute(QUERY, {'title': title})
     row = db_cursor.fetchone()
 
-    print "Project %s: %s\nMax grade: %s" % (row[1], row[2], row[3])
+    # print "Project %s: %s\nMax grade: %s" % (row[1], row[2], row[3])
     return row
 
 
@@ -131,8 +132,8 @@ def get_all_grades(github):
     if not rows:
         print "Sorry, that student github does not exist in the DB."
     else:
-        for row in rows:
-            print "Student %s completed project %s and received a grade of %s." % (row[1], row[2], row[3])
+        # for row in rows:
+        #     print "Student %s completed project %s and received a grade of %s." % (row[1], row[2], row[3])
         
         return rows
 
