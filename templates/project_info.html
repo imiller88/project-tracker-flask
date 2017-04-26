@@ -5,9 +5,21 @@
 </head>
 <body>
 
+  {% if project %}  
   <h4>Project: {{ project[1] }}</h4>
   <span>Description: {{ project[2] }}</span><br>
   <span>Max Grade: {{ project[3] }}</span>
+
+  {% else %}
+  <span>There is no information on this project yet.</span>
+  {% endif %}
+
+  <h4>The following students have completed this project with the following grades:</h4>
+  <ul>
+  {% for project_grade in project_grades %}
+    <li><a href="/student?github={{ project_grade[3] }}">{{ project_grade[0] }} {{ project_grade[1] }}</a>: {{ project_grade[2] }}</li>
+  {% endfor %}
+  </ul>
 
 </body>
 </html>

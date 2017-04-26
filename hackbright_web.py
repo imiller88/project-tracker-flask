@@ -69,9 +69,12 @@ def return_student_success():
 def project_listing():
     """ Returns information on project. """
 
-    project = hb.get_project_by_title("Blockly")
+    project = hb.get_project_by_title(request.args.get("project-name"))
 
-    return render_template("project_info.html", project=project)
+    project_grades = hb.get_all_project_grades(project[1])
+
+    return render_template("project_info.html", project=project, 
+                        project_grades=project_grades)
 
 
 if __name__ == "__main__":

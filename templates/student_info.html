@@ -4,17 +4,26 @@
     <title>Student Info</title>
 </head>
 <body>
+  {% if github %}
   <h1>{{ first }} {{ last }}</h1>
 
   <p>GitHub Account: {{ github }}</p>
 
+
   <span><h3>Projects:</h3>
+  {% if project_grades %}
     <ul>
     {% for project_grade in project_grades %}
-        <li>Project: {{ project_grade[1] }}, Grade: {{ project_grade[2]}}</li>
+        <li>Project: <a href="/project?project-name={{ project_grade[1] }}">{{ project_grade[1] }}</a>, Grade: {{ project_grade[2]}}</li>
     {% endfor %}
     </ul>
+  {% else %}
+  This student has not yet completed any projects.
+  {% endif %}
   </span>
+  {% else %}
+  This student does not exist.
+  {% endif %}
 
 
 </body>
